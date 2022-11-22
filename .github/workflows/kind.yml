@@ -1,0 +1,75 @@
+# https://github.com/dapr/quickstarts/tree/master/tutorials/hello-kubernetes
+
+name: dapr hello k8s
+
+on: push
+
+jobs:
+  create-cluster:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create k8s Kind Cluster
+        uses: helm/kind-action@v1.3.0
+        
+      - name: k8s wait
+        run: |
+          kubectl cluster-info
+          kubectl get nodes
+
+      - name: Dapr install
+        run: |
+          helm repo add dapr https://dapr.github.io/helm-charts/ 
+          helm repo update
+          helm upgrade --install dapr dapr/dapr \
+          --version=1.9 \
+          --namespace dapr-system \
+          --create-namespace \
+          --wait
+
+      - name: Install dapr cli
+        run: |
+          wget -q https://raw.githubusercontent.com/dapr/cli/master/install/install.sh -O - | /bin/bash
+          dapr -v
+          dapr status -k
+          
+      - name: Install redis
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+          helm install redis bitnami/redis --set image.tag=6.2 --set architecture=standalone
+         
+      - name: Get quickstart
+        run: |
+          git clone https://github.com/dapr/quickstarts.git
+          cd quickstarts
+
+      - name: Step 3
+        run: |
+          cd tutorials/hello-kubernetes
+          kubectl apply -f ./deploy/redis.yaml
+          kubectl apply -f ./deploy/node.yaml
+          kubectl rollout status deploy/nodeapp
+          kubectl get svc nodeapp
+          kubectl port-forward service/nodeapp 8080:80 &
+          
+      - name: Step 4
+        run: |
+          curl http://localhost:8080/ports
+          curl --request POST --data "@sample.json" --header Content-Type:application/json http://localhost:8080/neworder
+          curl http://localhost:8080/order
+ 
+      - name: Step 5
+        run: |
+          kubectl apply -f ./deploy/python.yaml
+          kubectl rollout status deploy/pythonapp
+          #kubectl logs --selector=app=node -c node --tail=-1
+         
+      - name: Step 6
+        run: |
+          kubectl logs --selector=app=node -c node # --tail=-1
+          kubectl logs --selector=app=node -c daprd #--tail=-1
+          kubectl logs --selector=app=python -c daprd # --tail=-1
+          ## curl $NODE_APP/order
+          
+      - name: Clean up
+        run: kubectl delete -f ./deploy

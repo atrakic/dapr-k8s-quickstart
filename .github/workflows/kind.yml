@@ -5,7 +5,7 @@ name: dapr hello k8s
 on: push
 
 jobs:
-  create-cluster:
+  dapr-demo:
     runs-on: ubuntu-latest
     steps:
       - name: Create k8s Kind Cluster
@@ -38,13 +38,10 @@ jobs:
           helm repo update
           helm install redis bitnami/redis --set image.tag=6.2 --set architecture=standalone
          
-      - name: Get quickstart
+      - name: Run quickstart
         run: |
           git clone https://github.com/dapr/quickstarts.git
           cd quickstarts
-
-      - name: Step 3
-        run: |
           cd tutorials/hello-kubernetes
           kubectl apply -f ./deploy/redis.yaml
           kubectl apply -f ./deploy/node.yaml
@@ -60,6 +57,7 @@ jobs:
  
       - name: Step 5
         run: |
+          ls -la
           kubectl apply -f ./deploy/python.yaml
           kubectl rollout status deploy/pythonapp
           #kubectl logs --selector=app=node -c node --tail=-1

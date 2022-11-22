@@ -48,20 +48,14 @@ jobs:
           kubectl rollout status deploy/nodeapp
           kubectl get svc nodeapp
           kubectl port-forward service/nodeapp 8080:80 &
-          
-      - name: Step 4
-        run: |
+          ## Step 4
           curl http://localhost:8080/ports
           curl --request POST --data "@sample.json" --header Content-Type:application/json http://localhost:8080/neworder
           curl http://localhost:8080/order
- 
-      - name: Step 5
-        run: |
-          ls -la
+          ## Step 5
           kubectl apply -f ./deploy/python.yaml
           kubectl rollout status deploy/pythonapp
-          #kubectl logs --selector=app=node -c node --tail=-1
-         
+          
       - name: Step 6
         run: |
           kubectl logs --selector=app=node -c node # --tail=-1

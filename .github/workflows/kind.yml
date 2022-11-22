@@ -66,4 +66,5 @@ jobs:
           ## curl $NODE_APP/order
           
       - name: Clean up
+        if: false
         run: kubectl delete -f ./deploy
